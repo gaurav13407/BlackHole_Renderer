@@ -15,6 +15,8 @@ pollster="0.3"
 name = "ray_tracing"
 path = "examples/ray_tracing.rs"
 
-
+[[example]]
+name="cpu_image"
+path="examples/cpu_image.rs"
 
 
