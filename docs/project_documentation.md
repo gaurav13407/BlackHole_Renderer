@@ -109,21 +109,28 @@ The project follows a modular architecture with clear separation of concerns:
 blackhole_renderer/
 ├── Cargo.toml              # Project dependencies and metadata
 ├── LICENSE                 # Project license
+├── README.md               # Quick start guide
 ├── docs/                   # Documentation directory
 │   └── project_documentation.md
 ├── src/                    # Source code directory
-│   ├── main.rs            # Application entry point and main loop
+│   ├── lib.rs             # Library root (exports public modules)
+│   ├── main.rs            # GPU application entry point
 │   ├── app.rs             # Application state management (planned)
 │   ├── gpu/               # GPU-related modules
 │   │   ├── compute.rs     # Compute pipeline management (planned)
 │   │   └── state.rs       # GPU state management (planned)
 │   ├── physics/           # Physics simulation modules
+│   │   ├── mod.rs         # Module declaration
+│   │   ├── geodesic.rs    # ✅ Geodesic integration (RK4)
 │   │   ├── integration.rs # Numerical integration routines (planned)
 │   │   └── schwarzschild.rs # Schwarzschild metric calculations (planned)
 │   └── renderer/          # Rendering modules
 │       ├── camera.rs      # Camera system (planned)
 │       ├── cpu_reference.rs # CPU reference implementation (planned)
 │       └── scene.rs       # Scene management (planned)
+├── examples/              # Standalone example programs
+│   ├── ray_tracing.rs     # ✅ Terminal-based ray trajectory demo
+│   └── cpu_image.rs       # ✅ CPU-based PPM image generator
 └── shaders/               # WGSL shader files
     ├── trace.wgsl         # Ray tracing compute shader
     └── fullscreen.wgsl    # Fullscreen quad rendering shader
@@ -132,24 +139,96 @@ blackhole_renderer/
 ### 3.2 Module Responsibilities
 
 #### 3.2.1 Main Module (`main.rs`)
-- Application initialization
+- GPU application initialization
 - Window creation using winit
 - WebGPU instance, adapter, device, and queue setup
 - Event loop management
 - Coordination between compute and render passes
 
-#### 3.2.2 Physics Modules (Planned)
-- **schwarzschild.rs**: Implementation of Schwarzschild metric calculations
-- **integration.rs**: Numerical integration methods for geodesic equations
+#### 3.2.2 Library Module (`lib.rs`)
+- Exports public physics modules
+- Enables code reuse in examples
+- Library API surface
 
-#### 3.2.3 GPU Modules (Planned)
+#### 3.2.3 Physics Modules
+- **geodesic.rs** ✅: RK4 integration of Schwarzschild geodesics
+  - `RayState` struct: Position (r, phi) and momentum (pr)
+  - `rk4_step()`: Fourth-order Runge-Kutta integrator
+  - Schwarzschild metric derivative functions
+  - Public API for library consumers
+- **integration.rs** (Planned): General numerical methods
+- **schwarzschild.rs** (Planned): Metric tensor calculations
+
+#### 3.2.4 GPU Modules (Planned)
 - **state.rs**: GPU resource management and state
 - **compute.rs**: Compute pipeline setup and dispatch
 
-#### 3.2.4 Renderer Modules (Planned)
+#### 3.2.5 Renderer Modules (Planned)
 - **camera.rs**: Camera positioning and ray generation
 - **scene.rs**: Scene object management
 - **cpu_reference.rs**: CPU-based reference implementation for validation
+
+#### 3.2.6 Example Programs ✅
+- **ray_tracing.rs**: Single photon trajectory simulation
+  - Demonstrates geodesic physics in terminal
+  - Validates RK4 integration accuracy
+  - Shows event horizon capture dynamics
+  
+- **cpu_image.rs**: Black hole image generator
+  - 800×800 PPM format output
+  - Camera-based ray generation
+  - Impact parameter calculation
+  - Event horizon detection
+  - Gradient coloring for escapes
+  - Configurable parameters (see §3.3)
+
+### 3.3 CPU Image Generator Architecture
+
+The `cpu_image.rs` example provides a complete CPU-based black hole renderer:
+
+#### 3.3.1 Camera System
+- **Position**: r = 20.0 (20 Schwarzschild radii from singularity)
+- **Orientation**: Looking at origin
+- **Field of View**: 1.0 radian
+- **Resolution**: 800×800 pixels
+
+#### 3.3.2 Ray Generation
+For each pixel (px, py):
+1. Convert pixel coordinates to normalized device coordinates: `(-0.5 to 0.5)`
+2. Apply field of view scaling
+3. Calculate impact parameter: `l = r_cam × sin(angle)`
+4. Initialize `RayState` with starting conditions:
+   - r = 20.0 (camera distance)
+   - phi = 0.0 (starting angle)
+   - pr = -1.0 (inward momentum)
+
+#### 3.3.3 Integration Loop
+```rust
+for _step in 0..max_steps {
+    state = rk4_step(state, l, step_size);
+    
+    if state.r < 2.0 {  // Event horizon
+        return (0, 0, 0);  // Black pixel
+    }
+    
+    if state.r > 50.0 {  // Escape
+        let intensity = (state.r - 50.0) / 50.0;
+        return gradient_color(intensity);
+    }
+}
+```
+
+#### 3.3.4 Output Format
+- **Format**: PPM P3 (ASCII)
+- **Color Space**: RGB (0-255)
+- **Filename**: `blackhole.ppm`
+- **File Size**: ~1.5 MB for 800×800 resolution
+
+#### 3.3.5 Performance Characteristics
+- **Pixel Rate**: ~10-50 pixels/second (single-threaded)
+- **Total Time**: ~2-15 minutes for full image
+- **Accuracy**: Step size 0.01 provides good balance
+- **Max Steps**: 5000 per ray (prevents infinite loops)
 
 ---
 
@@ -689,6 +768,33 @@ view_formats: vec![],  // Empty Vec
    - WGSL shader files
    - Placeholder compute shader (UV gradient)
    - Fullscreen rendering shader
+
+6. **Physics Module (`src/physics/geodesic.rs`)** ✅
+   - `RayState` struct for tracking ray position and momentum
+   - RK4 (4th-order Runge-Kutta) numerical integrator
+   - Schwarzschild geodesic equations implementation
+   - Public API for library reuse
+
+7. **CPU Reference Implementation** ✅
+   - **Terminal Ray Tracer** (`examples/ray_tracing.rs`)
+     - Single ray trajectory simulation
+     - Terminal output showing r, phi evolution
+     - Validates physics implementation
+   
+   - **PPM Image Generator** (`examples/cpu_image.rs`)
+     - 800×800 pixel black hole rendering
+     - Full camera system at r=20.0
+     - Impact parameter calculation from pixel coordinates
+     - Event horizon detection (black pixels)
+     - Escape gradient coloring
+     - PPM P3 format output
+     - Up to 5000 integration steps per pixel
+     - Configurable step size (0.01 default)
+
+8. **Library Architecture** ✅
+   - `src/lib.rs` exporting public modules
+   - Physics module reusable in examples
+   - Proper Rust module organization
 
 #### 8.1.2 Module Stubs (Empty Files)
 

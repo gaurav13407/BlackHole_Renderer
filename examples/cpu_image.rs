@@ -19,7 +19,7 @@ fn main(){
     let max_steps:usize=5000;
 
     //Create Output File
-    let file=File::create("balckhole.ppm").expect("Failed to create file ");
+    let file=File::create("blackhole.ppm").expect("Failed to create file ");
     let mut writer=BufWriter::new(file);
 
     //PPM Header
