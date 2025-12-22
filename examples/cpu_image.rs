@@ -3,6 +3,29 @@ use std::io::{Write,BufWriter};
 
 use blackhole_renderer::physics::geodesic::{RayState,rk4_step};
 
+
+fn sky_brightness(phi:f64)->u8{
+    use std::f64::consts::PI; 
+
+    //map angle to [0,1]
+    let u=(phi/(2.0*PI)).rem_euclid(1.0);
+
+    //Simple Hash
+    let h=(u*12_989.0).sin()*43758.5433;
+    let noise=h.fract();
+
+    //Star threshold
+    if noise > 0.997{
+        255 // bright star
+    }
+    else if noise>0.990{
+        180 // dim star
+    }else{
+        20 //dark sky
+    }
+}
+
+
 fn main(){
     // IMAGE Setting
     let width:usize=800;
@@ -79,10 +102,8 @@ fn main(){
 
              }else{
                  //Simple background gradient
-                 let r_screen=(x*x+y*y).sqrt();
-                 let brightness=(1.0-r_screen).clamp(0.0,1.0);
-                 let c=(brightness*255.0) as u8;
-                 writeln!(writer, "{} {} {} ",c,c,c).unwrap();
+                let c = sky_brightness(state.phi);
+                writeln!(writer, "{} {} {}", c, c, c).unwrap(); 
              }
          }
      }
