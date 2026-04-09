@@ -2,6 +2,9 @@
 name = "blackhole_renderer"
 version = "0.1.0"
 edition = "2021"
+description = "Real-time GPU black hole renderer with gravitational lensing and accretion disk simulation"
+license = "MIT"
+repository = "https://github.com/gaurav13407/BlackHole_Renderer"
 
 [dependencies]
 winit="0.29"
