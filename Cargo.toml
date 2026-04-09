@@ -10,6 +10,7 @@ glam="0.25"
 image="0.24"
 anyhow="1.0"
 pollster="0.3"
+bytemuck = { version = "1", features = ["derive"] }
 
 [[example]]
 name = "ray_tracing"

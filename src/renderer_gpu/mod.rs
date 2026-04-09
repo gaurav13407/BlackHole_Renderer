@@ -20,25 +20,32 @@ pub async fn run() {
 
     let mut state = State::new(Arc::clone(&window)).await;
 
-    // Request the first redraw
     window.request_redraw();
 
     event_loop
         .run(move |event, target| match event {
-            Event::WindowEvent {
-                event: WindowEvent::CloseRequested,
-                ..
-            } => {
-                target.exit();
-            }
+            Event::WindowEvent { event, .. } => match event {
+                WindowEvent::CloseRequested => {
+                    target.exit();
+                }
 
-            Event::WindowEvent {
-                event: WindowEvent::RedrawRequested,
-                ..
-            } => {
-                state.render().unwrap();
-                window.request_redraw();
-            }
+                // Resize surface + update resolution uniform
+                WindowEvent::Resized(new_size) => {
+                    state.resize(new_size);
+                }
+
+                // HiDPI / scale change — query actual new size from window
+                WindowEvent::ScaleFactorChanged { .. } => {
+                    state.resize(window.inner_size());
+                }
+
+                WindowEvent::RedrawRequested => {
+                    state.render().unwrap();
+                    window.request_redraw();
+                }
+
+                _ => {}
+            },
 
             _ => {}
         })
