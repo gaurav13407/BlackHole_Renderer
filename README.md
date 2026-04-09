@@ -21,15 +21,27 @@
 
 ---
 
+## 🖥️ Platform & Requirements
+
+| Platform | Status | Backend |
+|---|---|---|
+| Linux | ✅ Full support | Vulkan / OpenGL |
+| Windows | ✅ Full support | DirectX 12 / DX11 / Vulkan |
+| macOS | ✅ Full support | Metal |
+
+> **GPU required.** The shader runs 400 ray-march steps per pixel every frame.  
+> A dedicated GPU (GeForce, Radeon, Intel Arc, Apple Silicon) is needed for real-time performance.  
+> WGPU will technically fall back to software rendering (WARP / lavapipe) without a GPU, but expect **< 0.1 FPS** at any usable resolution.
+
+---
+
 ## 🚀 Quick Start
 
 ```bash
 git clone https://github.com/gaurav13407/BlackHole_Renderer
 cd BlackHole_Renderer
-cargo run
+cargo run --release   # use --release for best performance
 ```
-
-Requires a GPU with Vulkan / Metal / DX12 support.
 
 ---
 
